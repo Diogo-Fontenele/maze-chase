@@ -187,7 +187,6 @@ export default function App() {
   const createRoom = useCallback(async () => {
     setMsg('Criando sala..caralho.')
     const code  = genCode()
-    setMsg(genCode)
     const state = emptyState()
     const ok = await roomSave(code, state)
     if (!ok) { setMsg('❌ Erro ao criar sala. Verifique sua conexão.'); return }
