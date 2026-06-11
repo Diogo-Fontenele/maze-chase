@@ -123,17 +123,12 @@ export default function App() {
   gsRef.current = gs
 
   // ── Animate preloader ──────────────────────────────────────────────────────
-  const runLoader = useCallback((steps) => {
-    return new Promise(resolve => {
-      let i = 0
-      const tick = () => {
-        if (i >= steps.length) { setLoader(null); resolve(); return }
-        setLoader(steps[i])
-        i++
-        setTimeout(tick, steps[i-1].ms || 400)
-      }
-      tick()
-    })
+  const runLoader = useCallback(async (steps) => {
+    for (const step of steps) {
+      setLoader({ pct: step.pct, label: step.label })
+      await new Promise(r => setTimeout(r, step.ms || 350))
+    }
+    setLoader(null)
   }, [])
 
   // ── Test connection ────────────────────────────────────────────────────────
@@ -216,24 +211,28 @@ export default function App() {
   // ── Create room ────────────────────────────────────────────────────────────
   const createRoom = useCallback(async () => {
     setMsg('')
+    // Generate state synchronously FIRST before any async operations
+    const code  = genCode()
+    const state = emptyState()
     try {
-      await runLoader([
-        { pct:10, label:'Gerando labirinto...', ms:300 },
-        { pct:35, label:'Posicionando joias...', ms:300 },
-        { pct:60, label:'Criando sala no servidor...', ms:500 },
-        { pct:85, label:'Configurando jogadores...', ms:300 },
-        { pct:100, label:'Pronto!', ms:400 },
-      ])
-      const code  = genCode()
-      const state = emptyState()
+      setLoader({ pct: 10, label: 'Gerando labirinto...' })
+      await new Promise(r => setTimeout(r, 300))
+      setLoader({ pct: 40, label: 'Posicionando joias...' })
+      await new Promise(r => setTimeout(r, 300))
+      setLoader({ pct: 70, label: 'Criando sala no servidor...' })
       await roomSave(code, state)
+      setLoader({ pct: 90, label: 'Configurando...' })
+      await new Promise(r => setTimeout(r, 200))
+      setLoader({ pct: 100, label: 'Pronto!' })
+      await new Promise(r => setTimeout(r, 300))
+      setLoader(null)
       setRoomCode(code); setGs(state); setJoined(false)
       subscribe(code); setScreen('join')
     } catch(e) {
       setLoader(null)
-      setMsg('❌ Erro ao criar sala: ' + e.message + '\n\nVerifique se a chave do Supabase está correta no arquivo supabase.js')
+      setMsg('❌ Erro ao criar sala: ' + e.message)
     }
-  }, [runLoader, subscribe])
+  }, [subscribe])
 
   // ── Join by code ───────────────────────────────────────────────────────────
   const joinByCode = useCallback(async () => {
@@ -305,19 +304,19 @@ export default function App() {
   // ── Start game ─────────────────────────────────────────────────────────────
   const startGame = useCallback(async () => {
     try {
-      await runLoader([
-        { pct:20, label:'Gerando novo labirinto...', ms:400 },
-        { pct:50, label:'Espalhando joias...', ms:400 },
-        { pct:80, label:'Posicionando jogadores...', ms:400 },
-        { pct:100, label:'Começando!', ms:300 },
-      ])
+      setLoader({ pct: 20, label: 'Verificando jogadores...' })
+      await new Promise(r => setTimeout(r, 300))
       let s = await roomLoad(roomCode)
       if (!s) { setLoader(null); return }
       const all = Object.values(s.players)
       if (!all.some(p=>p.role==='cop'))   { setLoader(null); setMsg('⚠️ Precisa de 1 policial!'); return }
       if (!all.some(p=>p.role==='thief')) { setLoader(null); setMsg('⚠️ Precisa de 1 ladrão!');  return }
+      // Generate maze synchronously
       const maze = buildMaze(MW, MH)
-      s.maze=maze; s.loot=seedLoot(maze); s.winner=null
+      const loot = seedLoot(maze)
+      setLoader({ pct: 60, label: 'Gerando labirinto...' })
+      await new Promise(r => setTimeout(r, 400))
+      s.maze=maze; s.loot=loot; s.winner=null
       let ci=0, ti=0
       Object.keys(s.players).forEach(k => {
         const p=s.players[k], idx=p.role==='thief'?ti++:ci++
@@ -325,10 +324,14 @@ export default function App() {
         s.players[k] = { ...p, x:sx, y:sy, caught:false, loot:0 }
       })
       s.phase = 'playing'
+      setLoader({ pct: 90, label: 'Iniciando partida...' })
       await roomSave(roomCode, s)
+      setLoader({ pct: 100, label: 'Vamos lá!' })
+      await new Promise(r => setTimeout(r, 300))
+      setLoader(null)
       setGs(s); setMsg('')
     } catch(e) { setLoader(null); setMsg('❌ Erro ao iniciar: '+e.message) }
-  }, [roomCode, runLoader])
+  }, [roomCode])
 
   // ── Move ───────────────────────────────────────────────────────────────────
   const doMove = useCallback(async (dx, dy) => {
