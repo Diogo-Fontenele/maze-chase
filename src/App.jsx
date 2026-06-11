@@ -1,139 +1,156 @@
-// import { useState, useEffect, useCallback, useRef } from 'react'
-// import { supabase } from './supabase'
-
 import { useState } from 'react'
 import { createClient } from '@supabase/supabase-js'
 
-// 🔴 COLOCA AQUI OS SEUS DADOS
-const supabaseUrl = 'https://wlglksboakpsibgykymx.supabase.co'
-const supabaseKey = 'sb_publishable_hCJq1fKTJBmvy0AFaR7jyg_dExXymV7'
+// 🔥 CONFIG
+const supabase = createClient(
+  'https://wlglksboakpsibgykymx.supabase.co',
+  'sb_publishable_hCJq1fKTJBmvy0AFaR7jyg_dExXymV7'
+)
 
-const supabase = createClient(supabaseUrl, supabaseKey)
+// 🔧 utils
+function genCode() {
+  return 'DBG' + Math.floor(Math.random() * 10000)
+}
 
 export default function App() {
-  const [debug, setDebug] = useState({
-    connection: 'idle',
-    room: 'idle',
-    host: 'idle',
-    log: []
+  const [log, setLog] = useState([])
+  const [status, setStatus] = useState({
+    connection: '...',
+    room: '...',
+    host: '...'
   })
 
+  function addLog(msg) {
+    console.log(msg)
+    setLog(l => [...l, msg])
+  }
+
   async function runDebug() {
-
-    const log = (msg) => {
-      setDebug(prev => ({
-        ...prev,
-        log: [...prev.log, msg]
-      }))
-    }
-
-    setDebug({
-      connection: 'idle',
-      room: 'idle',
-      host: 'idle',
-      log: []
+    setLog([])
+    setStatus({
+      connection: '...',
+      room: '...',
+      host: '...'
     })
 
-    log('🚀 Iniciando debug...')
+    addLog('🚀 Iniciando debug...')
 
-    // 🔌 TESTE DE CONEXÃO
-    setDebug(prev => ({ ...prev, connection: 'testing' }))
+    // 🔌 TESTE CONEXÃO
+    try {
+      const { error } = await supabase.from('rooms').select('*').limit(1)
+      if (error) throw error
 
-    const { data: ping, error: pingError } = await supabase
-      .from('rooms')
-      .select('code')
-      .limit(1)
-
-    if (pingError) {
-      setDebug(prev => ({ ...prev, connection: 'error' }))
-      log('❌ Erro conexão: ' + pingError.message)
+      setStatus(s => ({ ...s, connection: 'ok' }))
+      addLog('✅ Conectado ao Supabase')
+    } catch (err) {
+      setStatus(s => ({ ...s, connection: 'erro' }))
+      addLog('❌ Erro conexão: ' + err.message)
       return
     }
 
-    setDebug(prev => ({ ...prev, connection: 'ok' }))
-    log('✅ Conectado ao Supabase')
-
     // 🏗️ CRIAR SALA
-    setDebug(prev => ({ ...prev, room: 'creating' }))
-
-    const code = 'DBG' + Math.floor(Math.random() * 10000)
+    const code = genCode()
 
     const state = {
-      players: [],
+      players: {},
+      loot: [],
+      maze: [],
       createdAt: Date.now()
     }
 
-    const { error: insertError } = await supabase
-      .from('rooms')
-      .insert([{ code, state }])
+    try {
+      const { error } = await supabase.from('rooms').insert({
+        code,
+        state
+      })
 
-    if (insertError) {
-      setDebug(prev => ({ ...prev, room: 'error' }))
-      log('❌ Erro ao criar sala: ' + insertError.message)
+      if (error) throw error
+
+      setStatus(s => ({ ...s, room: 'ok' }))
+      addLog('✅ Sala criada: ' + code)
+    } catch (err) {
+      setStatus(s => ({ ...s, room: 'erro' }))
+      addLog('❌ Erro ao criar sala: ' + err.message)
       return
     }
 
-    setDebug(prev => ({ ...prev, room: 'ok' }))
-    log('✅ Sala criada: ' + code)
+    // 📦 BUSCAR SALA
+    let roomData = null
 
-    // 📥 BUSCAR SALA
-    const { data: roomData, error: fetchError } = await supabase
-      .from('rooms')
-      .select('*')
-      .eq('code', code)
-      .maybeSingle()
+    try {
+      const { data, error } = await supabase
+        .from('rooms')
+        .select('*')
+        .eq('code', code)
+        .maybeSingle()
 
-    if (fetchError || !roomData) {
-      log('❌ Erro ao buscar sala')
+      if (error) throw error
+
+      roomData = data
+      addLog('📦 Sala recebida: ' + JSON.stringify(data))
+    } catch (err) {
+      addLog('❌ Erro ao buscar sala: ' + err.message)
       return
     }
-
-    log('📦 Sala recebida: ' + JSON.stringify(roomData))
 
     // 👤 CRIAR HOST
-    setDebug(prev => ({ ...prev, host: 'creating' }))
+    try {
+      const safeState = {
+        players: {},
+        loot: [],
+        maze: [],
+        ...roomData?.state
+      }
 
-    const updatedState = {
-      ...roomData.state,
-      players: [{ id: 'host', x: 1, y: 1 }]
-    }
+      safeState.players['host'] = {
+        id: 'host',
+        name: 'Host',
+        x: 0,
+        y: 0
+      }
 
-    const { error: updateError } = await supabase
-      .from('rooms')
-      .update({ state: updatedState })
-      .eq('code', code)
+      const { error } = await supabase
+        .from('rooms')
+        .update({ state: safeState })
+        .eq('code', code)
 
-    if (updateError) {
-      setDebug(prev => ({ ...prev, host: 'error' }))
-      log('❌ Erro ao criar host: ' + updateError.message)
+      if (error) throw error
+
+      setStatus(s => ({ ...s, host: 'ok' }))
+      addLog('👤 Host criado com sucesso')
+    } catch (err) {
+      setStatus(s => ({ ...s, host: 'erro' }))
+      addLog('❌ Erro ao criar host: ' + err.message)
       return
     }
 
-    setDebug(prev => ({ ...prev, host: 'ok' }))
-    log('👤 Host criado com sucesso')
-
-    log('🏁 Debug finalizado')
+    addLog('🏁 Debug finalizado')
   }
 
   return (
-    <div style={{ padding: 20, background: '#111', color: '#0f0', minHeight: '100vh' }}>
+    <div style={{ padding: 20, fontFamily: 'monospace' }}>
       <h2>🧪 DEBUG SUPABASE</h2>
 
-      <button onClick={runDebug} style={{ padding: 10, marginBottom: 20 }}>
+      <button onClick={runDebug}>
         Rodar Debug
       </button>
 
-      <p>🔌 Conexão: {debug.connection}</p>
-      <p>🏗️ Sala: {debug.room}</p>
-      <p>👤 Host: {debug.host}</p>
-
-      <hr />
-
-      <div style={{ maxHeight: 300, overflow: 'auto', background: '#000', padding: 10 }}>
-        {debug.log.map((l, i) => (
-          <div key={i}>{l}</div>
-        ))}
+      <div style={{ marginTop: 20 }}>
+        <div>🔌 Conexão: {status.connection}</div>
+        <div>🏗️ Sala: {status.room}</div>
+        <div>👤 Host: {status.host}</div>
       </div>
+
+      <pre style={{
+        marginTop: 20,
+        background: '#111',
+        color: '#0f0',
+        padding: 10,
+        height: 300,
+        overflow: 'auto'
+      }}>
+        {log.join('\n')}
+      </pre>
     </div>
   )
 }
