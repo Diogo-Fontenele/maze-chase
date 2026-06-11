@@ -25,9 +25,22 @@ function buildMaze(w, h) {
 }
 
 function seedLoot(maze) {
+  if (!maze) return []
+
   const free = []
-  for (let y=2;y<MH-2;y++) for (let x=2;x<MW-2;x++) if (maze[y][x]===0) free.push({x,y})
-  return free.sort(()=>Math.random()-.5).slice(0,LOOT_N).map(p=>({...p,collected:false}))
+
+  for (let y = 2; y < MH - 2; y++) {
+    for (let x = 2; x < MW - 2; x++) {
+      if (maze[y] && maze[y][x] === 0) {
+        free.push({ x, y })
+      }
+    }
+  }
+
+  return free
+    .sort(() => Math.random() - 0.5)
+    .slice(0, LOOT_N)
+    .map(p => ({ ...p, collected: false }))
 }
 
 function startPos(role, idx) {
@@ -159,18 +172,32 @@ export default function App() {
 
   // ── Create room ────────────────────────────────────────────────────────────
   const createRoom = useCallback(async () => {
-    setMsg('Criando sala...')
-    const code  = genCode()
-    const state = emptyState()
-    const ok = await roomSave(code, state)
-    if (!ok) { setMsg('❌ Erro ao criar sala. Verifique sua conexão.'); return }
-    setRoomCode(code)
-    setGs(state)
-    setJoined(false)
-    setMsg('')
-    subscribe(code)
-    setScreen('join')
-  }, [subscribe])
+  setMsg('Criando sala - Aguarda ai jogador!!')
+
+  const code = genCode()
+
+  const maze = buildMaze(MW, MH)
+  const state = {
+    maze,
+    players: [],
+    loot: seedLoot(maze)
+  }
+
+  const ok = await roomSave(code, state)
+
+  if (!ok) {
+    setMsg('❌ Erro ao criar sala. Verifique sua conexão.')
+    return
+  }
+
+  setRoomCode(code)
+  setGs(state)
+  setJoined(false)
+  setMsg('')
+  subscribe(code)
+  setScreen('join')
+
+}, [subscribe])
 
   // ── Join by code ───────────────────────────────────────────────────────────
   const joinByCode = useCallback(async () => {
