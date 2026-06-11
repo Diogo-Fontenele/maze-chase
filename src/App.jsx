@@ -1,6 +1,21 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { supabase } from './supabase'
 
+useEffect(() => {
+  async function test() {
+    const { data, error } = await supabase
+      .from('rooms')
+      .insert([{ code: 'TEST', state: {} }])
+
+    console.log('RESULTADO:', data)
+    console.log('ERRO:', error)
+  }
+
+  test()
+}, [])
+
+
+
 // ─── Constants ────────────────────────────────────────────────────────────────
 const MW = 21, MH = 21, CELL = 24, FOG = 8, LOOT_N = 6
 const CC = ['#00C9FF','#48CAE4','#90E0EF','#0096C7','#00B4D8','#0077B6']
