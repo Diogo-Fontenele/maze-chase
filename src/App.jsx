@@ -49,6 +49,30 @@ function genCode() {
   return Array.from({length:4}, () => c[Math.random()*c.length|0]).join('')
 }
 
+async function testSupabase() {
+  const code = 'TEST' + Math.floor(Math.random() * 1000)
+  const state = {
+    test: true,
+    createdAt: Date.now()
+  }
+<button onClick={testSupabase}>
+  Testar Supabase
+</button>
+  
+  console.log('CRIANDO SALA:', code)
+  const { data, error } = await supabase
+    .from('rooms')
+    .insert([{ code, state }])
+  console.log('INSERT RESULT:', { data, error })
+  if (error) return
+  const { data: fetchData, error: fetchError } = await supabase
+    .from('rooms')
+    .select('*')
+    .eq('code', code)
+    .maybeSingle()
+  console.log('FETCH RESULT:', { fetchData, fetchError })
+}
+
 // ─── Supabase helpers ─────────────────────────────────────────────────────────
 async function roomLoad(code) {
   const { data, error } = await supabase
@@ -602,3 +626,6 @@ const S = {
   db:{ width:36,height:36,background:'#0a1929',border:'1px solid #1a3a55',borderRadius:6,
     color:'#00c9ff',fontSize:14,cursor:'pointer',fontWeight:700,fontFamily:'inherit' },
 }
+
+
+
