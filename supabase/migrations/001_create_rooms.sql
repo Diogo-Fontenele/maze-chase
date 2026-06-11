@@ -3,7 +3,7 @@
 -- Dashboard → SQL Editor → New query → Cole tudo → Run
 -- =============================================
 
--- 1. Cria a tabela
+-- 1. Cria a tabela (se não existir)
 CREATE TABLE IF NOT EXISTS rooms (
   code        TEXT PRIMARY KEY,
   state       JSONB NOT NULL DEFAULT '{}',
@@ -17,15 +17,11 @@ ALTER TABLE rooms ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "Public read"   ON rooms;
 DROP POLICY IF EXISTS "Public insert" ON rooms;
 DROP POLICY IF EXISTS "Public update" ON rooms;
-DROP POLICY IF EXISTS "Public upsert" ON rooms;
 
 -- 4. Cria políticas permissivas (jogo público)
 CREATE POLICY "Public read"   ON rooms FOR SELECT USING (true);
 CREATE POLICY "Public insert" ON rooms FOR INSERT WITH CHECK (true);
 CREATE POLICY "Public update" ON rooms FOR UPDATE USING (true);
 
--- 5. Habilita Realtime
-ALTER PUBLICATION supabase_realtime ADD TABLE rooms;
-
--- 6. Confirma
-SELECT 'Tabela rooms criada com sucesso!' AS status;
+-- 5. Confirma
+SELECT 'Setup completo! Tabela rooms pronta.' AS status;
