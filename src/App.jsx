@@ -346,6 +346,10 @@ export default function App() {
         {connOk===true && <div style={{...S.sbar,...S.sok}}>🟢 Servidor conectado!</div>}
         {connOk===false && <div style={{...S.sbar,...S.serr}}>❌ Sem conexão com servidor</div>}
 
+        <button onClick={testSupabase}>
+          Testar Supabase
+        </button>
+        
         <button style={{...S.btnP, opacity:connOk?1:.5}} onClick={createRoom} disabled={!connOk}>
           ✅ CRIAR NOVA SALA
         </button>
