@@ -54,10 +54,12 @@ async function testSupabase() {
   const state = {
     test: true,
     createdAt: Date.now()
-  }
+
 <button onClick={testSupabase}>
   Testar Supabase
 </button>
+  }
+
   
   console.log('CRIANDO SALA:', code)
   const { data, error } = await supabase
@@ -183,8 +185,9 @@ export default function App() {
 
   // ── Create room ────────────────────────────────────────────────────────────
   const createRoom = useCallback(async () => {
-    setMsg('Criando sala...')
+    setMsg('Criando sala..caralho.')
     const code  = genCode()
+    setMsg(genCode())
     const state = emptyState()
     const ok = await roomSave(code, state)
     if (!ok) { setMsg('❌ Erro ao criar sala. Verifique sua conexão.'); return }
@@ -343,12 +346,10 @@ export default function App() {
         <p style={S.sub}>Polícia vs Ladrão · Multiplayer Online</p>
 
         {connOk===null && <div style={{...S.sbar,...S.swait}}>⏳ Verificando conexão...</div>}
-        {connOk===true && <div style={{...S.sbar,...S.sok}}>🟢 Servidor conectado!</div>}
+        {connOk===true && <div style={{...S.sbar,...S.sok}}>🟢 Servidor conectado ok!</div>}
         {connOk===false && <div style={{...S.sbar,...S.serr}}>❌ Sem conexão com servidor</div>}
 
-        <button onClick={testSupabase}>
-          Testar Supabase
-        </button>
+     
         
         <button style={{...S.btnP, opacity:connOk?1:.5}} onClick={createRoom} disabled={!connOk}>
           ✅ CRIAR NOVA SALA
