@@ -175,7 +175,7 @@ export default function App() {
   // ── Join by code ───────────────────────────────────────────────────────────
   const joinByCode = useCallback(async () => {
     const code = joinInput.trim().toUpperCase()
-    if (code.length !== 4) { setMsg('⚠️ O código tem 4 letras!'); return }
+    if (code.length !== 4) { setMsg('⚠️ O código tem 4 letras PUTO!'); return }
     setMsg('Conectando à sala '+code+'...')
     const s = await roomLoad(code)
     if (!s) { setMsg('❌ Sala "'+code+'" não encontrada. Peça ao anfitrião criar primeiro.'); return }
@@ -319,11 +319,11 @@ export default function App() {
         <p style={S.sub}>Polícia vs Ladrão · Multiplayer Online</p>
 
         {connOk===null && <div style={{...S.sbar,...S.swait}}>⏳ Verificando conexão...</div>}
-        {connOk===true && <div style={{...S.sbar,...S.sok}}>🟢 Servidor conectado!</div>}
+        {connOk===true && <div style={{...S.sbar,...S.sok}}>🟢 Servidor conectado PORRA!</div>}
         {connOk===false && <div style={{...S.sbar,...S.serr}}>❌ Sem conexão com servidor</div>}
 
         <button style={{...S.btnP, opacity:connOk?1:.5}} onClick={createRoom} disabled={!connOk}>
-          ✅ CRIAR NOVA SALA
+          ✅ CRIAR NOVA SALA MERDA
         </button>
 
         <div style={S.divider}><span style={{color:'#334',fontSize:12,padding:'0 8px'}}>ou entre em uma sala</span></div>
